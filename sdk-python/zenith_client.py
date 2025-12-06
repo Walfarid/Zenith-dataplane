@@ -56,6 +56,27 @@ class ZenithSDK:
         if ret != 0:
             raise RuntimeError(f"Publish failed with code {ret}")
 
+    def load_plugin(self, wasm_path: str):
+        with open(wasm_path, 'rb') as f:
+            wasm_bytes = f.read()
+        
+        # zenith_load_plugin(engine, bytes_ptr, len)
+        self.lib.zenith_load_plugin.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_char_p, # bytes
+            ctypes.c_size_t
+        ]
+        self.lib.zenith_load_plugin.restype = ctypes.c_int32
+        
+        ret = self.lib.zenith_load_plugin(
+            self.engine_ptr,
+            wasm_bytes,
+            len(wasm_bytes)
+        )
+        if ret != 0:
+            raise RuntimeError(f"Failed to load plugin from {wasm_path}")
+        print(f"Loaded plugin: {wasm_path} ({len(wasm_bytes)} bytes)")
+
     def close(self):
         if self.engine_ptr:
             self.lib.zenith_free(self.engine_ptr)

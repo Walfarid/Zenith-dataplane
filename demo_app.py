@@ -14,6 +14,9 @@ def main():
     # Needs to point to the .so built
     sdk = ZenithSDK(lib_path="./core/target/release/libzenith_core.so")
     
+    # Load WASM Plugin (Filter seq_no is Even)
+    sdk.load_plugin("./filter.wasm")
+    
     # Create Data
     data = [
         pa.array([1, 2, 3, 4]),

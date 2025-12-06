@@ -93,3 +93,24 @@ pub unsafe extern "C" fn zenith_publish(
         Err(_) => -4, // FFI Error
     }
 }
+
+/// Load a WASM plugin
+/// Returns 0 on success, < 0 on error
+#[no_mangle]
+pub unsafe extern "C" fn zenith_load_plugin(
+    engine_ptr: *mut c_void,
+    wasm_bytes: *const u8,
+    len: usize
+) -> i32 {
+    if engine_ptr.is_null() || wasm_bytes.is_null() {
+        return -1;
+    }
+    
+    let engine = &*(engine_ptr as *mut ZenithEngine);
+    let slice = std::slice::from_raw_parts(wasm_bytes, len);
+    
+    match engine.load_plugin(slice) {
+        Ok(_) => 0,
+        Err(_) => -2,
+    }
+}

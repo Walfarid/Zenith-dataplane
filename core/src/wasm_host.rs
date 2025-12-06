@@ -1,3 +1,4 @@
+// WasmHost implementation
 use wasmtime::{Engine, Linker, Module, Store, Config};
 use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
 use crate::error::Result;
@@ -6,7 +7,6 @@ use std::sync::{Arc, Mutex};
 pub struct WasmPlugin {
     store: Arc<Mutex<Store<WasiCtx>>>,
     instance: wasmtime::Instance,
-    // For MVP, we assume a simple export "process"
 }
 
 pub struct WasmHost {
@@ -17,7 +17,7 @@ pub struct WasmHost {
 impl WasmHost {
     pub fn new() -> Result<Self> {
         let mut config = Config::new();
-        config.wasm_component_model(true); // Enable if using components, but we use core modules + WASI for now for simplicity
+        // config.wasm_component_model(true); // Disable for basic module
         
         let engine = Engine::new(&config)?;
         let mut linker = Linker::new(&engine);
@@ -46,19 +46,20 @@ impl WasmHost {
 }
 
 impl WasmPlugin {
-    pub fn trigger(&self) -> Result<()> {
+    pub fn on_event(&self, source_id: u32, seq_no: u64) -> Result<bool> {
         let mut store = self.store.lock().expect("Lock poisoned");
-        // Look for a function named "on_event"
-        let func = self.instance.get_typed_func::<(), ()>(&mut *store, "on_event");
+        // Look for a function named "on_event" that takes (i32, i64) -> i32
+        // Rust u32 -> wasm i32, u64 -> i64 usually
+        let func = self.instance.get_typed_func::<(i32, i64), i32>(&mut *store, "on_event");
         
         match func {
             Ok(f) => {
-                f.call(&mut *store, ())?;
-                Ok(())
+                let res = f.call(&mut *store, (source_id as i32, seq_no as i64))?;
+                Ok(res != 0)
             }
             Err(_) => {
-                // If not found, maybe it's just a passive plugin
-                Ok(())
+                // If not found, allow by default
+                Ok(true)
             }
         }
     }
