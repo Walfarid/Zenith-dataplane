@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith Dashboard</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #111; color: #fff; margin: 0; padding: 20px; }
+        .card { background: #222; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
+        h1 { color: #4ade80; }
+        .stat { font-size: 2em; font-weight: bold; }
+        .label { color: #888; font-size: 0.9em; }
+        code { background: #333; padding: 2px 5px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Zenith Data Plane</h1>
+    
+    <div class="card">
+        <div class="label">Status</div>
+        <div class="stat" id="status">Connecting...</div>
+    </div>
+
+    <div style="display: flex; gap: 20px;">
+        <div class="card" style="flex: 1;">
+            <div class="label">Buffer Events</div>
+            <div class="stat" id="buffer">0</div>
+        </div>
+        <div class="card" style="flex: 1;">
+            <div class="label">Loaded Plugins</div>
+            <div class="stat" id="plugins">0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>System Logs</h3>
+        <div id="logs" style="font-family: monospace; color: #aaa;">
+            > Dashboard initialized.
+        </div>
+    </div>
+
+    <script>
+        async function update() {
+            try {
+                const res = await fetch('http://localhost:8080/status');
+                const data = await res.json();
+                
+                document.getElementById('status').innerText = data.status.toUpperCase();
+                document.getElementById('status').style.color = '#4ade80';
+                document.getElementById('buffer').innerText = data.buffer_len;
+                document.getElementById('plugins').innerText = data.plugin_count;
+                
+            } catch (e) {
+                document.getElementById('status').innerText = "OFFLINE";
+                document.getElementById('status').style.color = '#f87171';
+            }
+        }
+        
+        setInterval(update, 1000);
+        update();
+    </script>
+</body>
+</html>

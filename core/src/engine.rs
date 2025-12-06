@@ -39,6 +39,20 @@ impl ZenithEngine {
         let running = self.running.clone();
         let plugins = self.plugins.clone(); 
 
+        // Start Admin API
+        let admin_state = crate::admin_api::AdminState {
+            buffer: self.buffer.clone(),
+            plugins: self.plugins.clone(),
+        };
+        
+        thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+            rt.block_on(crate::admin_api::start_admin_server(admin_state, 8080));
+        });
+
         thread::spawn(move || {
             println!("Zenith Core Engine: Consumer thread started.");
             while running.load(std::sync::atomic::Ordering::Relaxed) {

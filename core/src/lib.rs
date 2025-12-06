@@ -3,6 +3,7 @@ pub mod ring_buffer;
 pub mod engine;
 pub mod wasm_host;
 pub mod error;
+pub mod admin_api;
 
 use std::ffi::c_void;
 use std::sync::Arc;
