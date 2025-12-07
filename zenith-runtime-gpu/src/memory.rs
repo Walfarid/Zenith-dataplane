@@ -1,6 +1,5 @@
 //! Memory Manager - ZeRO-style offload patterns
 
-use crate::{Error, Result};
 
 /// Memory tier
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

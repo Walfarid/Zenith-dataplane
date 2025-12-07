@@ -6,12 +6,11 @@ use crate::{
     config::EngineConfig,
     numa::NumaTopology,
     telemetry::TelemetryCollector,
-    thread::{PinnedThreadPool, ThreadConfig},
     Error, Result,
 };
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tracing::{debug, error, info, warn};
+use tracing::info;
 
 /// CPU Runtime Engine
 ///

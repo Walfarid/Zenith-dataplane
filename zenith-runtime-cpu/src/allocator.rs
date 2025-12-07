@@ -3,7 +3,7 @@
 //! Custom allocator with NUMA awareness and hugepage support.
 
 use crate::{Error, Result};
-use std::alloc::{GlobalAlloc, Layout};
+use std::alloc::Layout;
 use std::ptr::NonNull;
 
 /// NUMA-aware allocator configuration

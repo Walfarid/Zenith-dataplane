@@ -3,12 +3,12 @@
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
-use tracing::{debug, info};
+use tracing::debug;
 
 /// Telemetry collector for runtime metrics
 pub struct TelemetryCollector {
     running: Arc<AtomicBool>,
-    interval_ms: u64,
+    _interval_ms: u64,
     start_time: Instant,
     
     // Counters
@@ -28,7 +28,7 @@ impl TelemetryCollector {
     pub fn new(interval_ms: u64) -> Self {
         Self {
             running: Arc::new(AtomicBool::new(false)),
-            interval_ms,
+            _interval_ms: interval_ms,
             start_time: Instant::now(),
             events_processed: AtomicU64::new(0),
             bytes_processed: AtomicU64::new(0),

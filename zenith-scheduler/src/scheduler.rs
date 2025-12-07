@@ -3,11 +3,11 @@
 use crate::job::{Job, JobState};
 use crate::node::{Node, NodeRegistry};
 use crate::{Error, Result};
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::sync::Arc;
 use parking_lot::RwLock;
 use priority_queue::PriorityQueue;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 /// Scheduling decision for a job
 #[derive(Debug, Clone)]
@@ -107,7 +107,7 @@ impl Scheduler {
                     
                     // Release resources
                     for node_id in &job.allocated_nodes {
-                        if let Some(node) = self.nodes.get(node_id) {
+                        if let Some(_node) = self.nodes.get(node_id) {
                             // In production: send cancel signal to node agent
                         }
                     }

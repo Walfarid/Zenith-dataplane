@@ -1,9 +1,9 @@
 //! GPU Device Discovery and Topology
 
-use crate::{Error, Result};
+use crate::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 /// GPU device information
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -2,7 +2,6 @@
 //!
 //! Selects the optimal kernel implementation at runtime.
 
-use crate::{Error, Result};
 use serde::{Deserialize, Serialize};
 
 /// Available kernel backends

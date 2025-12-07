@@ -2,7 +2,7 @@
 //!
 //! This module provides async I/O primitives using io_uring on Linux.
 
-use crate::{Error, Result};
+use crate::Result;
 
 #[cfg(feature = "io_uring")]
 pub mod iouring {
@@ -37,7 +37,7 @@ pub mod iouring {
     pub struct IoUringEngine {
         // In production, this would hold the io_uring instance
         // ring: IoUring,
-        config: IoUringConfig,
+        _config: IoUringConfig,
     }
     
     impl IoUringEngine {
@@ -48,7 +48,7 @@ pub mod iouring {
             //     .setup_sqpoll(config.sq_poll_idle)
             //     .build(config.sq_entries)?;
             
-            Ok(Self { config })
+            Ok(Self { _config: config })
         }
         
         /// Submit a read operation

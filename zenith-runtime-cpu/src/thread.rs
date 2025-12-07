@@ -2,7 +2,7 @@
 
 use crate::{Error, Result};
 use std::thread::JoinHandle;
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
 /// Thread pinning configuration
 #[derive(Debug, Clone)]
