@@ -2,60 +2,102 @@ name: Zenith CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
+  # TODO: Remove this flag once the code is cleaned up.
+  RUSTFLAGS: "-A warnings"
 
 jobs:
   build-core:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: wasm32-wasip1
-        override: true
-    - name: Build Core
-      run: cd core && cargo build --vocab
-    - name: Test Core
-      run: cd core && cargo test
+      - uses: actions/checkout@v6
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-wasip1
+          cache: true
+
+      - name: Test Core (Debug)
+        run: cd core && cargo test
+
+      - name: Build Core (Release)
+        run: cd core && cargo build --release --verbose
+
+      - name: Upload Core Artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: core
+          path: |
+            target/release/*.so
+            target/release/*.dll
+            target/release/*.dylib
 
   build-plugin:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: wasm32-wasip1
-    - name: Build Filter Plugin
-      run: cd plugins/simple_filter && cargo build --target wasm32-wasip1 --release
+      - uses: actions/checkout@v6
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-wasip1
+          cache: true
+
+      - name: Build Filter Plugin
+        run: cd plugins/simple_filter && cargo build --target wasm32-wasip1 --release --verbose
+
+      - name: Upload Plugin Artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: plugin
+          path: plugins/simple_filter/target/wasm32-wasip1/release/simple_filter.wasm
 
   test-python-integration:
     needs: [build-core, build-plugin]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyarrow numpy
-    - name: Build Core (Release)
-      run: cd core && cargo build --release
-    - name: Build Plugin
-      run: |
-        rustup target add wasm32-wasip1
-        cd plugins/simple_filter && cargo build --target wasm32-wasip1 --release
-        cp target/wasm32-wasip1/release/simple_filter.wasm ../../filter.wasm
-    - name: Run Demo
-      run: python3 demo_app.py
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          # TODO: Roll back to 3.10 if there are issues with 3.14
+          python-version: "3.14"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyarrow numpy cffi
+
+      - name: Download Core Artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: core
+          path: ./
+
+      - name: Download Plugin Artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: plugin
+          path: ./
+
+      - name: Prepare Files
+        run: |
+          cp simple_filter.wasm examples/filter.wasm
+          echo "Looking for library..."
+          find . -name "libzenith_core.so"
+
+      - name: Run Demo
+        run: |
+          export ZENITH_CORE_LIB=$(find . -name "libzenith_core.so" | head -n 1)
+          echo "Using Core Lib at: $ZENITH_CORE_LIB"
+          PYTHONPATH=. python3 examples/demo_app.py
