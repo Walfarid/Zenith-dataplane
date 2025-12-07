@@ -39,13 +39,13 @@ The header file is used by:
 
 ## Error Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| -1 | Null pointer error |
-| -2 | Buffer full |
-| -3 | Plugin load error |
-| -4 | FFI conversion error |
+| Code |        Meaning         |
+|------|------------------------|
+| 0    | Success                |
+| -1   | Null pointer error     |
+| -2   | Buffer full            |
+| -3   | Plugin load error      |
+| -4   | FFI conversion error   |
 
 ## Build Integration
 

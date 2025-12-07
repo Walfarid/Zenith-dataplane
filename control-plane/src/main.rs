@@ -68,10 +68,8 @@ async fn main() {
     let addr = "0.0.0.0:9090";
     info!("[START] Zenith Control Plane starting on {}", addr);
 
-    axum::Server::bind(&addr.parse().unwrap())
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
 // Health check

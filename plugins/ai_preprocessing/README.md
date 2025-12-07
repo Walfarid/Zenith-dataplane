@@ -8,12 +8,12 @@ High-performance preprocessing operations compiled to WebAssembly (WASM) for sec
 
 Fast image preprocessing for computer vision training:
 
-| Operation | Description | Use Case |
-|-----------|-------------|----------|
-| `resize_nearest` | Nearest-neighbor resize | Fast training, lower quality |
-| `resize_bilinear` | Bilinear interpolation resize | Higher quality |
-| `normalize` | ImageNet normalization | Standard CNN preprocessing |
-| `random_horizontal_flip` | Random horizontal flip | Data augmentation |
+| Operation                | Description                  | Use Case                           |
+|--------------------------|------------------------------|------------------------------------|
+| `resize_nearest`         | Nearest-neighbor resize      | Fast training, lower quality       |
+| `resize_bilinear`        | Bilinear interpolation resize| Higher quality                     |
+| `normalize`              | ImageNet normalization       | Standard CNN preprocessing         |
+| `random_horizontal_flip` | Random horizontal flip       | Data augmentation                  |
 
 **Build:**
 ```bash
@@ -33,12 +33,12 @@ engine.load_plugin("plugins/ai_preprocessing/image_ops/target/wasm32-wasip1/rele
 
 Fast text preprocessing for NLP/LLM training:
 
-| Operation | Description | Use Case |
-|-----------|-------------|----------|
-| `tokenize` | BPE/WordPiece tokenization | LLM training |
-| `clean_text` | Lowercase, remove punctuation | Text normalization |
-| `pad_sequence` | Pad/truncate to fixed length | Batch preparation |
-| `create_attention_mask` | Generate attention masks | Transformer models |
+| Operation               | Description                   | Use Case           |
+|-------------------------|-------------------------------|--------------------|
+| `tokenize`              | BPE/WordPiece tokenization    | LLM training       |
+| `clean_text`            | Lowercase, remove punctuation | Text normalization |
+| `pad_sequence`          | Pad/truncate to fixed length  | Batch preparation  |
+| `create_attention_mask` | Generate attention masks      | Transformer models |
 
 **Build:**
 ```bash
@@ -67,10 +67,10 @@ See [Plugin Development Guide](../../docs/PLUGIN_GUIDE.md) for detailed instruct
 
 ## Performance Benchmarks
 
-| Operation | Python (PIL) | Zenith WASM | Speedup |
-|-----------|--------------|-------------|---------|
-| Resize 224x224 (1000 images) | 2.3s | 0.18s | **12.8x** |
-| Tokenize (10K sentences) | 1.8s | 0.15s | **12x** |
-| Normalize batch (1000 images) | 0.9s | 0.08s | **11.3x** |
+| Operation                     | Python (PIL) | Zenith WASM | Speedup   |
+|-------------------------------|--------------|-------------|-----------|
+| Resize 224x224 (1000 images)  | 2.3s         | 0.18s       | **12.8x** |
+| Tokenize (10K sentences)      | 1.8s         | 0.15s       | **12x**   |
+| Normalize batch (1000 images) | 0.9s         | 0.08s       | **11.3x** |
 
 *Benchmarks on AMD Ryzen 9 5900X. Results vary by hardware.*

@@ -55,14 +55,14 @@ cargo test -- --test-threads=1
 
 ## Test Coverage
 
-| Component | Test Type | Coverage |
-|-----------|-----------|----------|
-| Core Engine | Unit | Basic |
-| Python SDK | Integration | Full |
-| Storage | Unit | Full |
-| Runtime | Unit | Full |
-| Host API | Unit | Full |
-| WASM Plugins | Build | Full |
+| Component    | Test Type   | Coverage |
+|--------------|-------------|----------|
+| Core Engine  | Unit        | Basic    |
+| Python SDK   | Integration | Full     |
+| Storage      | Unit        | Full     |
+| Runtime      | Unit        | Full     |
+| Host API     | Unit        | Full     |
+| WASM Plugins | Build       | Full     |
 
 ## CI/CD Integration
 
@@ -113,7 +113,7 @@ Test Summary
 Passed: 7
 Failed: 0
 
-🎉 All tests passed!
+ All tests passed!
 ```
 
 ## Troubleshooting
