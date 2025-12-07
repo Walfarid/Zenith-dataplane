@@ -203,7 +203,7 @@ pytest tests/
 
 ---
 
-## 📖 Documentation
+##  Documentation
 
 | Document | Description |
 |----------|-------------|
@@ -216,7 +216,7 @@ pytest tests/
 
 ---
 
-## 🔬 Technical References
+##  Technical References
 
 This project is built upon research and industry best practices:
 
