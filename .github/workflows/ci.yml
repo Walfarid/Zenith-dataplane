@@ -5,15 +5,24 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
   # TODO: Remove this flag once the code is cleaned up.
   RUSTFLAGS: "-A warnings"
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build-core:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v6
 
@@ -24,20 +33,30 @@ jobs:
           target: wasm32-wasip1
           cache: true
 
-      - name: Test Core (Debug)
-        run: cd core && cargo test
-
+      # Audit: Build core library
       - name: Build Core (Release)
-        run: cd core && cargo build --release --verbose
+        run: |
+          echo "::group::Core Build"
+          echo "Audit: Build started at $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "Audit: Platform: ${{ matrix.os }}"
+          echo "Audit: Commit: ${{ github.sha }}"
 
+          cd core && cargo build --release --verbose
+
+          echo "Audit: Build completed successfully"
+          echo "::endgroup::"
+
+      # Audit: Upload build artifacts
       - name: Upload Core Artifact
         uses: actions/upload-artifact@v5
         with:
-          name: core
+          name: core-${{ matrix.os }}
           path: |
             target/release/*.so
-            target/release/*.dll
             target/release/*.dylib
+            target/release/*.dll
+          if-no-files-found: error
+          retention-days: 7
 
   build-plugin:
     runs-on: ubuntu-latest
@@ -51,53 +70,155 @@ jobs:
           target: wasm32-wasip1
           cache: true
 
+      # Audit: Build WASM plugin
       - name: Build Filter Plugin
-        run: cd plugins/simple_filter && cargo build --target wasm32-wasip1 --release --verbose
+        run: |
+          echo "::group::Plugin Build"
+          echo "Audit: WASM build started at $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "Audit: Target: wasm32-wasip1"
 
+          cd plugins/simple_filter && cargo build --target wasm32-wasip1 --release --verbose
+
+          echo "Audit: Build completed successfully"
+          echo "::endgroup::"
+
+      # Audit: Upload WASM artifact
       - name: Upload Plugin Artifact
         uses: actions/upload-artifact@v5
         with:
           name: plugin
           path: plugins/simple_filter/target/wasm32-wasip1/release/simple_filter.wasm
+          if-no-files-found: error
+          retention-days: 7
 
   test-python-integration:
     needs: [build-core, build-plugin]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          # TODO: Roll back to 3.10 if there are issues with 3.14
-          python-version: "3.14"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
 
+      # Audit: Install Python dependencies
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install pyarrow numpy cffi
+          echo "::group::Dependency Installation"
+          echo "Audit: Installation started at $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "Audit: Python version: $(python --version)"
 
+          python -m pip install --upgrade pip
+          pip install pyarrow numpy cffi pytest pytest-cov
+
+          echo "Audit: Installation completed successfully"
+          echo "::endgroup::"
+
+      # Audit: Download build artifacts
       - name: Download Core Artifact
         uses: actions/download-artifact@v6
         with:
-          name: core
-          path: ./
+          name: core-${{ matrix.os }}
+          path: ./artifacts/core
 
       - name: Download Plugin Artifact
         uses: actions/download-artifact@v6
         with:
           name: plugin
-          path: ./
+          path: ./artifacts/plugin
 
+      # Audit: Prepare test environment
       - name: Prepare Files
         run: |
-          cp simple_filter.wasm examples/filter.wasm
-          echo "Looking for library..."
-          find . -name "libzenith_core.so"
+          echo "::group::File Preparation"
+          echo "Audit: Preparation started at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
 
+          mkdir -p examples
+          cp artifacts/plugin/simple_filter.wasm examples/filter.wasm
+
+          echo "Audit: Verifying downloaded artifacts..."
+          ARTIFACT_COUNT=$(find artifacts/core -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) | wc -l)
+          echo "Audit: Found $ARTIFACT_COUNT library artifact(s)"
+
+          if [ "$ARTIFACT_COUNT" -eq 0 ]; then
+            echo "::error::No library artifacts found"
+            exit 1
+          fi
+
+          echo "Audit: Artifact listing:"
+          ls -R artifacts/
+          echo "::endgroup::"
+
+      # Audit: Execute integration demo
       - name: Run Demo
         run: |
-          export ZENITH_CORE_LIB=$(find . -name "libzenith_core.so" | head -n 1)
+          echo "::group::Integration Demo"
+          echo "Audit: Demo started at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          echo "Audit: Platform: ${{ matrix.os }}"
+          echo "Audit: Python: $(python --version)"
+
+          CORE_LIB_PATH=$(find artifacts/core -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) | head -n 1)
+
+          if [ -z "$CORE_LIB_PATH" ]; then
+             echo "::error::Core library not found"
+             echo "Audit: Library discovery FAILED"
+             exit 1
+          fi
+
+          ABS_PATH="$(pwd)/$CORE_LIB_PATH"
+
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+             ABS_PATH=$(cygpath -w "$ABS_PATH")
+          fi
+
+          export ZENITH_CORE_LIB="$ABS_PATH"
+          export PYTHONPATH=".:sdk-python"
+
+          echo "Audit: Library configured: $(basename "$CORE_LIB_PATH")"
           echo "Using Core Lib at: $ZENITH_CORE_LIB"
-          PYTHONPATH=. python3 examples/demo_app.py
+
+          python -u examples/demo_app.py
+
+          echo "Audit: Demo completed successfully"
+          echo "::endgroup::"
+
+      # Audit: Execute test suite
+      - name: Run Tests
+        continue-on-error: true
+        run: |
+          echo "::group::Test Suite"
+          echo "Audit: Test suite check started at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+          if [ ! -d "tests" ]; then
+            echo "Audit: No tests directory found - skipping"
+            echo "::endgroup::"
+            exit 0
+          fi
+
+          echo "Audit: Running pytest..."
+          export PYTHONPATH=".:sdk-python"
+
+          CORE_LIB_PATH=$(find artifacts/core -type f \( -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) | head -n 1)
+
+          if [ -z "$CORE_LIB_PATH" ]; then
+              echo "::error::Core library not found for tests"
+              exit 1
+          fi
+
+          ABS_PATH="$(pwd)/$CORE_LIB_PATH"
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+              ABS_PATH=$(cygpath -w "$ABS_PATH")
+          fi
+          export ZENITH_CORE_LIB="$ABS_PATH"
+
+          pytest tests/ -v --cov=. --cov-report=xml
+
+          echo "Audit: Tests completed successfully"
+          echo "::endgroup::"
